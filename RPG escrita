@@ -2,6 +2,45 @@ from random import randint
 import sys
 import random
 import time
+import select
+import termios
+import tty
+
+def key_pressed():
+    """Verifica se alguma tecla foi pressionada (não bloqueante)."""
+    if sys.platform == 'win32':
+        import msvcrt
+        return msvcrt.kbhit()
+    else:
+        dr, _, _ = select.select([sys.stdin], [], [], 0)
+        return dr != []
+
+def clear_key():
+    """Limpa o buffer de teclas, descartando qualquer tecla pressionada."""
+    if sys.platform == 'win32':
+        import msvcrt
+        while msvcrt.kbhit():
+            msvcrt.getch()
+    else:
+        old_settings = termios.tcgetattr(sys.stdin)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            while select.select([sys.stdin], [], [], 0)[0]:
+                sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+def print_with_skip(text, delay=0.02):
+    """Imprime texto caractere por caractere. Pressione qualquer tecla para pular o restante."""
+    for i, ch in enumerate(text):
+        print(ch, end='', flush=True)
+        if key_pressed():
+            print(text[i+1:], end='', flush=True)
+            clear_key()
+            break
+        time.sleep(delay)
+    print()
+
 
 dificuldade = 0 # dificuldade
 
@@ -100,6 +139,8 @@ cristal = False
 apresentacao_pause = False
 escolha_definitiva = ''
 
+
+
 # cidade 1
 # estaleiro
 cavalo = False
@@ -188,8 +229,8 @@ def comfiguracoes():
             dificuldade = 9  # Impossível
     elif escolha == 3:
         print("==============================\n"
-              "          RPG BATTLE\n"
-              "           V0.9 beta\n"
+              "          Shattered_Sky\n"
+              "           V0.97 beta\n"
               "==============================\n"
               "       Desenvolvido por:\n"
               "           Kennedy\n"
@@ -197,7 +238,6 @@ def comfiguracoes():
     elif escolha == 4:
         sys.exit()
         exit()
-
 
 # nome do heroi
 while True:
@@ -782,12 +822,12 @@ def andando():
         while True:
             try:
                 escolha = int(input('Escolha uma opção: '))
-                if escolha in [1,2,3,4,5]:
+                if escolha in [1,2,3,4,5,6]:
                     break
                 else:
-                    print('Digite um número entre 1 e 5!')
+                    print('Digite um número entre 1 e 6!')
             except ValueError:
-                print('Digite um número entre 1 e 5!')
+                print('Digite um número entre 1 e 6!')
                 continue
 
         if escolha == 1:
@@ -1005,7 +1045,7 @@ capitulo_atual = capitulos[indice_capitulo_atual]
 
 hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "O céu estava azul quando começou.\n"
-"Kael lembra disso. Ele estava correndo com uma espada de madeira na mão, fingindo ser um herói qualquer das histórias que ouvia escondido.\n"
+f"{nome_heroi} lembra disso. Ele estava correndo com uma espada de madeira na mão, fingindo ser um herói qualquer das histórias que ouvia escondido.\n"
 "Gritava ataques imaginários, pulava cercas, tropeçava na própria empolgação.\n"
 "A vila de Arandel era pequena, mas para ele era um reino inteiro.\n"
 "Então a luz mudou.\n"
@@ -1023,7 +1063,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Alguém gritou.\n"
 "Uma coluna de energia desceu do rasgo e atingiu o chão.\n"
 "A explosão levantou terra, madeira e corpos.\n"
-"Kael caiu.\n"
+f"{nome_heroi} caiu.\n"
 "Seus ouvidos apitaram.\n"
 "Quando conseguiu erguer a cabeça, viu silhuetas se formando dentro da fumaça.\n"
 "Criaturas tortas andando em quatro patas.\n"
@@ -1032,19 +1072,19 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Uma figura alta envolta em uma capa que parecia feita de noite líquida.\n"
 "Dois olhos vermelhos abriram-se na escuridão.\n"
 "**Malgethar.**\n"
-"Mesmo criança, Kael entendeu que aquilo não era apenas um inimigo.\n"
+f"Mesmo criança, {nome_heroi} entendeu que aquilo não era apenas um inimigo.\n"
 "Era algo acima disso.\n"
 "O Rei Demônio ergueu a mão.\n"
 "E o chão respondeu.\n"
 "Mortos se levantaram.\n"
 "Sombras ganharam forma.\n"
 "O mundo virou caos.\n"
-"Kael tentou correr até sua casa.\n"
+f"{nome_heroi} tentou correr até sua casa.\n"
 "Não conseguiu.\n"
 "Uma criatura atravessou o caminho.\n"
 "Seu pai apareceu na frente dele segurando uma espada que nunca tinha usado de verdade.\n"
 "— Não olha para trás. Corre.\n"
-"Kael correu.\n"
+f"{nome_heroi} correu.\n"
 "O último som que ouviu antes de entrar na floresta foi o impacto de algo colossal atingindo o chão.\n"
 "E o grito que nunca esqueceu.\n"
 "Quando amanheceu, não havia mais nada.\n"
@@ -1052,7 +1092,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 
 "...Dez anos depois...\n"
 "O som da lâmina cortando o ar é seco e preciso.\n"
-"Kael gira, avança, recua.\n"
+f"{nome_heroi} gira, avança, recua.\n"
 "O corpo já não é o de uma criança.\n"
 "Os movimentos são calculados.\n"
 "Ele treina sozinho em um campo aberto.\n"
@@ -1063,7 +1103,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Plantaram.\n"
 "Construíram.\n"
 "Fingiram que o Rei Demônio era um pesadelo distante.\n"
-"Mas Kael nunca fingiu.\n"
+f"Mas {nome_heroi} nunca fingiu.\n"
 "Ele ouviu os rumores.\n"
 "Cidades ao norte desapareceram.\n"
 "Criaturas começaram a surgir novamente nas estradas.\n"
@@ -1094,7 +1134,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Pessoas correram para dentro de casa.\n"
 "Portas foram trancadas.\n"
 "Ferramentas viraram armas improvisadas.\n"
-"Kael não correu.\n"
+f"{nome_heroi} não correu.\n"
 "Ele pegou a espada.\n"
 "Quando chegou ao campo já havia três deles.\n"
 "O garoto.\n"
@@ -1105,14 +1145,14 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "O cheiro era o mesmo da noite de Arandel.\n"
 "Morte misturada com algo mais.\n"
 "Algo mágico.\n"
-"Kael avançou sem hesitar.\n"
+f"{nome_heroi} avançou sem hesitar.\n"
 "O primeiro golpe foi limpo.\n"
 "A lâmina atravessou o corpo do velho.\n"
 "O segundo tentou agarrá-lo.\n"
-"Mas Kael girou o corpo e cortou o braço antes de finalizar.\n"
+f"Mas {nome_heroi} girou o corpo e cortou o braço antes de finalizar.\n"
 "O terceiro...\n"
 "O garoto...\n"
-"Por um segundo Kael congelou.\n"
+f"Por um segundo {nome_heroi} congelou.\n"
 "Foi tempo suficiente para a criatura avançar.\n"
 "Ele fechou os olhos no momento do golpe.\n"
 "Quando abriu o corpo já estava no chão.\n"
@@ -1125,20 +1165,20 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Ao cair da noite eles cercaram o assentamento.\n"
 "Zumbis avançavam em grupos desorganizados.\n"
 "Entre eles esqueletos com armas enferrujadas.\n"
-"Kael organizou os poucos que sabiam lutar.\n"
+f"{nome_heroi} organizou os poucos que sabiam lutar.\n"
 "Não havia muralhas.\n"
 "Não havia exército.\n"
 "Só medo...\n",
 
 "...Magia verde explodia pelo campo.\n"
-"Esqueletos surgiam da terra tentando cercar Kael.\n"
+f"Esqueletos surgiam da terra tentando cercar {nome_heroi}.\n"
 "Mas o lich mantinha distância.\n"
 "Controlando tudo de longe.\n"
-"Kael percebeu rapidamente.\n"
+f"{nome_heroi} percebeu rapidamente.\n"
 "— O corpo não importa...\n"
 "— O poder está no cajado.\n"
 "O lich lançou outra rajada de energia.\n"
-"Mas Kael avançou direto.\n"
+f"Mas {nome_heroi} avançou direto.\n"
 "Ignorando os mortos ao redor.\n"
 "Ele saltou sobre um zumbi.\n"
 "Girou o corpo.\n"
@@ -1151,12 +1191,12 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Os zumbis caíram no chão.\n"
 "O lich virou pó.\n"
 "E pela primeira vez naquela noite o assentamento ficou em silêncio.\n"
-"Kael olhou para o horizonte.\n"
+f"{nome_heroi} olhou para o horizonte.\n"
 "— Isso foi só o começo...\n"
 
 "...Capítulo 2 — A Floresta que Não Dorme\n"
 "A estrada sumiu no meio das árvores.\n"
-"Kael parou na entrada da mata.\n"
+f"{nome_heroi} parou na entrada da mata.\n"
 "Escuro.\n"
 "Quieto.\n"
 "Sem pássaro.\n"
@@ -1182,7 +1222,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Mas parecia.\n"
 "Galhos que imitavam braços.\n"
 "Troncos que pareciam corpos enterrados em pé.\n"
-"Kael ficou alerta e continuou.\n"
+f"{nome_heroi} ficou alerta e continuou.\n"
 "A clareira apareceu de repente.\n"
 "Pequena.\n"
 "Circular.\n"
@@ -1193,11 +1233,11 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Parado.\n"
 "Imóvel.\n"
 "Respirando devagar.\n"
-"Kael não hesitou.\n"
+f"{nome_heroi} não hesitou.\n"
 "Puxou a espada.\n"
 "O homem avançou.\n"
 "O golpe veio rápido.\n"
-"Mais rápido do que Kael esperava.\n"
+f"Mais rápido do que {nome_heroi} esperava.\n"
 "Ele desviou no último instante.\n"
 "Sentiu o vento no rosto.\n"
 "Ripostou.\n"
@@ -1205,19 +1245,19 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Veio de novo.\n"
 "Braço duro como madeira.\n"
 "Varrendo na altura da cabeça.\n"
-"Kael abaixou.\n"
+f"{nome_heroi} abaixou.\n"
 "Girou.\n"
 "E cravou a espada fundo no peito dela.\n"
 "A criatura parou.\n"
 "Olhou para o cabo da arma enterrado em si.\n"
-"Depois para Kael.\n"
+f"Depois para {nome_heroi}.\n"
 "— Ah.\n"
 "O corpo desabou.\n"
 "Virou pó.\n"
 "Casca seca.\n"
 "Terra.\n"
 "Em segundos não restou nada.\n"
-"Kael ficou parado.\n"
+f"{nome_heroi} ficou parado.\n"
 "Respirando pesado.\n"
 "Olhou em volta.\n"
 "A clareira estava vazia.\n"
@@ -1231,19 +1271,19 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 
 "O dragão atacou primeiro.\n"
 "Uma coluna de fogo explodiu da boca da criatura.\n"
-"Kael rolou para o lado no último segundo.\n"
+f"{nome_heroi} rolou para o lado no último segundo.\n"
 "O chão da clareira virou carvão.\n"
 "A criatura avançou.\n"
-"As garras rasgaram a terra onde Kael estava um instante antes.\n"
+f"As garras rasgaram a terra onde {nome_heroi} estava um instante antes.\n"
 "A força era absurda.\n"
 "Cada movimento fazia o chão tremer.\n"
-"Kael percebeu algo.\n"
+f"{nome_heroi} percebeu algo.\n"
 "O peito do dragão brilhava levemente entre as escamas.\n"
 "Um ponto mais claro.\n"
 "Mais frágil.\n"
 "A próxima investida veio como um trovão.\n"
 "O dragão abriu as asas para atacar.\n"
-"Kael correu direto na direção da criatura.\n"
+f"{nome_heroi} correu direto na direção da criatura.\n"
 "Saltou sobre uma pedra quebrada.\n"
 "E usou o impulso para alcançar o peito da besta.\n"
 "A espada atravessou as escamas.\n"
@@ -1256,11 +1296,11 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "O silêncio voltou lentamente para a floresta.\n"
 "O corpo colossal começou a perder o brilho dos olhos.\n"
 "A chama nas narinas desapareceu.\n"
-"Kael puxou a espada do corpo da criatura.\n"
+f"{nome_heroi} puxou a espada do corpo da criatura.\n"
 "Respirando pesado.\n"
 "A batalha tinha terminado.\n"
 "A floresta voltou a ficar silenciosa.\n"
-"Kael guardou a espada.\n"
+f"{nome_heroi} guardou a espada.\n"
 "E continuou caminhando.\n"
 "Mais fundo.\n"
 "Sempre em direção ao mesmo destino...\n"
@@ -1273,7 +1313,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Runas quase apagadas marcavam o arco de entrada.\n"
 "Como se alguém tivesse tentado selar aquele lugar…\n"
 "E falhado.\n"
-"Kael parou por um momento.\n"
+f"{nome_heroi} parou por um momento.\n"
 "O ar que saía dali de dentro era frio.\n"
 "Não era o frio natural da terra.\n"
 "Era um frio estranho.\n"
@@ -1290,17 +1330,17 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Marcas de garras nas paredes.\n"
 "Teias grossas cruzando corredores.\n"
 "Restos de ossos espalhados pelo chão.\n"
-"Kael avançou devagar.\n"
+f"{nome_heroi} avançou devagar.\n"
 "E então algo caiu do teto.\n"
 "Um slime.\n"
 "A massa gelatinosa se espalhou pelo chão.\n"
 "Como um líquido vivo.\n"
 "O slime se ergueu para envolvê-lo.\n"
-"Kael cravou a espada no núcleo da criatura.\n"
+f"{nome_heroi} cravou a espada no núcleo da criatura.\n"
 "A massa gelatinosa colapsou.\n"
 "A batalha foi curta.\n"
 "Quando terminou o chão da masmorra estava quieto novamente.\n"
-"Kael limpou a lâmina.\n"
+f"{nome_heroi} limpou a lâmina.\n"
 "Ele olhou mais fundo no corredor escuro.\n"
 "— Esta masmorra está crescendo.\n"
 "E quanto mais fundo ele fosse…\n"
@@ -1308,11 +1348,11 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 
 "O mímico atacava como uma besta faminta.\n"
 "Cada mordida esmagava pedra.\n"
-"Kael desviava por pouco.\n"
+f"{nome_heroi} desviava por pouco.\n"
 "A língua chicoteou e agarrou seu braço.\n"
 "Ele foi puxado direto para a boca da criatura.\n"
 "Os dentes começaram a fechar.\n"
-"Kael não tentou escapar.\n"
+f"{nome_heroi} não tentou escapar.\n"
 "Em vez disso…\n"
 "Ele empurrou a espada direto na garganta do monstro.\n"
 "A lâmina atravessou madeira.\n"
@@ -1320,14 +1360,14 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "E magia.\n"
 "O mímico gritou.\n"
 "A sala inteira tremeu.\n"
-"Kael empurrou a espada ainda mais fundo.\n"
+f"{nome_heroi} empurrou a espada ainda mais fundo.\n"
 "— Acabou.\n"
 "A criatura explodiu em fragmentos de madeira e energia mágica.\n"
 "Silêncio.\n"
 "As runas da sala se apagaram lentamente.\n"
 "No centro da caverna algo pequeno caiu no chão.\n"
 "Um núcleo de masmorra quebrado.\n"
-"Kael pegou o cristal.\n"
+f"{nome_heroi} pegou o cristal.\n"
 "Ele brilhava com uma luz fraca.\n"
 "— Então alguém estava alimentando essa masmorra…\n"
 "Ele olhou para a saída escura do corredor.\n"
@@ -1336,14 +1376,14 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Criaturas mais fortes.\n"
 "Generais.\n"
 "Servos do Rei Demônio.\n"
-"Kael guardou o núcleo no bolso.\n"
+f"{nome_heroi} guardou o núcleo no bolso.\n"
 "— Se isso foi só o começo…\n"
 "Ele caminhou para fora da masmorra.\n"
 "— Então alguém está preparando o mundo para algo maior.\n"
 "No céu distante nuvens escuras começaram a se reunir novamente...\n"
 
 "# Capítulo 4 — A Floresta dos Predadores\n"
-"A saída da masmorra levou Kael para o outro lado da montanha.\n"
+f"A saída da masmorra levou {nome_heroi} para o outro lado da montanha.\n"
 "Ele não esperava isso.\n"
 "Do lado de fora não havia estrada.\n"
 "Nem campos.\n"
@@ -1355,7 +1395,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Antigas demais.\n"
 "A luz do sol mal atravessava as copas densas.\n"
 "Deixando o chão coberto por sombras constantes.\n"
-"Kael respirou fundo.\n"
+f"{nome_heroi} respirou fundo.\n"
 "O ar tinha cheiro de terra molhada.\n"
 "E sangue.\n"
 "Ele caminhou alguns metros.\n"
@@ -1368,13 +1408,13 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Pegadas.\n"
 "Grandes.\n"
 "Profundas.\n"
-"Kael se abaixou para observar.\n"
+f"{nome_heroi} se abaixou para observar.\n"
 "Ele se levantou.\n"
 "E continuou andando.\n"
 "Um som seco ecoou entre as árvores.\n"
 "CRACK\n"
 "Algo correu entre os troncos.\n"
-"Kael virou rapidamente.\n"
+f"{nome_heroi} virou rapidamente.\n"
 "Um animal saltou da escuridão da mata.\n"
 "Chifres negros.\n"
 "Olhos vermelhos.\n"
@@ -1382,16 +1422,16 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Rápido demais para ser um animal normal.\n"
 "Um cervo sombrio.\n"
 "A criatura avançou como uma flecha.\n"
-"Kael desviou no último segundo.\n"
+f"{nome_heroi} desviou no último segundo.\n"
 "Sentindo os chifres passarem a centímetros do seu peito.\n"
 "O cervo girou rapidamente para atacar de novo.\n"
-"Mas Kael já estava preparado.\n"
+"Mas {nome_heroi} já estava preparado.\n"
 "Quando a criatura saltou outra vez.\n"
 "Ele deu um passo para o lado.\n"
 "E cortou o pescoço da besta com um único golpe.\n"
 "O corpo caiu entre as folhas secas.\n"
 "Silêncio voltou à floresta.\n"
-"Kael limpou a lâmina.\n"
+f"{nome_heroi} limpou a lâmina.\n"
 "Ele olhou ao redor.\n"
 "— Então esses são os monstros daqui.\n"
 "Mas algo estava errado.\n"
@@ -1399,19 +1439,19 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Parecia que estavam o caçando.\n",
 
 "O troll atacou primeiro.\n"
-"Seu punho esmagou o chão onde Kael estava um segundo antes.\n"
+f"Seu punho esmagou o chão onde {nome_heroi} estava um segundo antes.\n"
 "A força da criatura era absurda.\n"
-"Kael tentou cortar o braço do monstro.\n"
+f"{nome_heroi} tentou cortar o braço do monstro.\n"
 "A lâmina atingiu a pele grossa.\n"
 "Mas não atravessou completamente.\n"
 "O troll atacou novamente.\n"
-"Kael desviava.\n"
+f"{nome_heroi} desviava.\n"
 "Procurando uma abertura.\n"
-"Kael respirou fundo.\n"
+f"{nome_heroi} respirou fundo.\n"
 "Ele esperou o próximo ataque.\n"
 "O troll ergueu o braço gigantesco.\n"
 "Era isso que ele queria.\n"
-"Kael avançou direto para o monstro.\n"
+f"{nome_heroi} avançou direto para o monstro.\n"
 "A criatura não esperava isso.\n"
 "Ele deslizou por baixo do braço levantado.\n"
 "Pulou nas costas do troll.\n"
@@ -1420,17 +1460,17 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Seus olhos se arregalaram.\n"
 "Depois o corpo gigantesco caiu lentamente no chão.\n"
 "A floresta ficou em silêncio novamente.\n"
-"Kael puxou a espada.\n"
+f"{nome_heroi} puxou a espada.\n"
 "Ele olhou ao redor.\n"
 "O vento começou a passar entre as árvores novamente.\n"
 "Pássaros voltaram a cantar ao longe.\n"
 "Como se a floresta inteira tivesse prendido a respiração.\n"
 "Até agora.\n"
-"Kael suspirou...\n"
+f"{nome_heroi} suspirou...\n"
 
 "...Capítulo 5 — O Reino Afogado\n"
 "A floresta terminou em um penhasco.\n"
-"Kael saiu entre as árvores.\n"
+f"{nome_heroi} saiu entre as árvores.\n"
 "E parou diante de um mar infinito.\n"
 "O vento soprou forte.\n"
 "Carregando o cheiro de sal e tempestade.\n"
@@ -1444,7 +1484,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Criaturas começaram a surgir no mar nos últimos anos.\n"
 "Navios desapareciam.\n"
 "Portos inteiros haviam sido abandonados.\n"
-"Mas Kael sabia que precisava atravessar.\n"
+f"Mas {nome_heroi} sabia que precisava atravessar.\n"
 "Ele desceu o penhasco por uma trilha antiga.\n"
 "Até chegar a um pequeno porto abandonado.\n"
 "Barcos quebrados balançavam presos a cordas velhas.\n"
@@ -1454,7 +1494,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Pequeno.\n"
 "Velho.\n"
 "Mas navegável.\n"
-"Kael passou a mão pela madeira do casco.\n"
+f"{nome_heroi} passou a mão pela madeira do casco.\n"
 "— Isso vai ter que servir.\n"
 "Algumas horas depois o barco já estava no mar.\n"
 "O vento empurrava as velas lentamente.\n"
@@ -1471,16 +1511,16 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Olhos negros.\n"
 "Cabelos longos flutuando como algas.\n"
 "Uma sereia sombria.\n"
-"Ela observava Kael em silêncio.\n"
+f"Ela observava {nome_heroi} em silêncio.\n"
 "Depois outra apareceu.\n"
 "E mais outra.\n"
-"Kael segurou o cabo da espada.\n"
+f"{nome_heroi} segurou o cabo da espada.\n"
 "— Claro.\n"
 "O mar também está cheio de monstros.\n"
 "Uma das sereias abriu a boca.\n"
 "O canto começou baixo.\n"
 "Quase bonito.\n"
-"Mas Kael sentiu imediatamente.\n"
+f"Mas {nome_heroi} sentiu imediatamente.\n"
 "Magia.\n"
 "Magia tentando invadir sua mente.\n"
 "Tentando puxá-lo para o mar.\n"
@@ -1501,28 +1541,28 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "O tentáculo atacou primeiro.\n"
 "Ele esmagou o convés.\n"
 "Com força suficiente para partir pedra.\n"
-"Kael saltou para o lado.\n"
+f"{nome_heroi} saltou para o lado.\n"
 "Outro tentáculo subiu da água.\n"
 "E tentou arrastá-lo para o mar.\n"
-"Kael cortou a ponta da criatura.\n"
+f"{nome_heroi} cortou a ponta da criatura.\n"
 "Fazendo o monstro recuar com um rugido furioso.\n"
 "Mas havia muitos tentáculos.\n"
 "O barco começou a se partir.\n"
-"Kael percebeu que não podia vencer ficando ali.\n"
+f"{nome_heroi} percebeu que não podia vencer ficando ali.\n"
 "Ele respirou fundo.\n"
 "E correu.\n"
 "Quando o próximo tentáculo atacou.\n"
-"Kael saltou direto sobre ele.\n"
+f"{nome_heroi} saltou direto sobre ele.\n"
 "A pele da criatura era escorregadia.\n"
 "Mas ele conseguiu subir alguns metros.\n"
 "Outro tentáculo tentou derrubá-lo.\n"
-"Kael continuou correndo.\n"
+f"{nome_heroi} continuou correndo.\n"
 "Subindo.\n"
 "Até alcançar o ponto onde os tentáculos se conectavam ao corpo principal do monstro.\n"
 "Ali a pele era mais fina.\n"
 "Ele levantou a espada.\n"
 "— Acabou.\n"
-"Kael cravou a lâmina profundamente na carne da criatura.\n"
+f"{nome_heroi} cravou a lâmina profundamente na carne da criatura.\n"
 "O Kraken soltou um rugido monstruoso.\n"
 "O mar inteiro se agitou.\n"
 "A criatura se debateu violentamente.\n"
@@ -1532,7 +1572,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "O barco balançava.\n"
 "Quase destruído.\n"
 "Mas ainda flutuando.\n"
-"Kael voltou lentamente para o convés.\n"
+f"{nome_heroi} voltou lentamente para o convés.\n"
 "Ele respirou fundo.\n"
 "Enquanto o vento começava a soprar novamente.\n"
 "Ao longe ele já conseguia ver terra.\n"
@@ -1541,7 +1581,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Ele percebeu algo estranho.\n"
 "Nuvens negras giravam lentamente no horizonte.\n"
 "Como se algo enorme estivesse despertando.\n"
-"Kael apertou o cabo da espada.\n"
+f"{nome_heroi} apertou o cabo da espada.\n"
 "— Então é para lá que eu preciso ir.\n"
 "O barco seguiu lentamente em direção à costa.\n"
 "E no céu distante.\n"
@@ -1550,16 +1590,16 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "...Capítulo 6 — As Portas do Inferno\n"
 "O barco não chegou inteiro.\n"
 "Depois da batalha no mar, o casco já estava danificado demais.\n"
-"As ondas continuaram batendo contra a madeira quebrada enquanto Kael se aproximava da costa do continente oriental.\n"
+f"As ondas continuaram batendo contra a madeira quebrada enquanto {nome_heroi} se aproximava da costa do continente oriental.\n"
 "Faltavam poucos metros.\n"
 "Então o casco finalmente cedeu.\n"
 "A madeira rachou com um estalo alto, e parte do barco se partiu sob seus pés.\n"
-"Kael não perdeu tempo.\n"
+f"{nome_heroi} não perdeu tempo.\n"
 "Ele saltou na água e nadou os últimos metros até a areia.\n"
 "Quando finalmente saiu do mar, a maré levou embora o que restava da embarcação.\n"
 "O barco tinha resistido apenas o suficiente.\n"
 "O suficiente para ele chegar.\n"
-"Kael ficou alguns segundos olhando o mar.\n"
+f"{nome_heroi} ficou alguns segundos olhando o mar.\n"
 "— Você cumpriu seu papel.\n"
 "Ele virou-se para o continente.\n"
 "A costa era diferente do que ele lembrava das histórias antigas.\n"
@@ -1569,54 +1609,54 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Formando uma pequena vila costeira.\n"
 "Era pouco mais que um punhado de cabanas.\n"
 "Mesmo assim, parecia um milagre que ainda existisse.\n"
-"Kael caminhou até lá.\n"
+f"{nome_heroi} caminhou até lá.\n"
 "As pessoas da vila eram poucas.\n"
 "Rostos cansados.\n"
 "Olhos atentos.\n"
-"Eles observavam Kael como alguém que já esperava problemas.\n"
+f"Eles observavam {nome_heroi} como alguém que já esperava problemas.\n"
 "Um velho pescador falou primeiro.\n"
 "— Você veio do mar?\n"
-"Kael assentiu.\n"
+f"{nome_heroi} assentiu.\n"
 "— Estou atravessando o continente.\n"
 "O velho soltou uma risada curta.\n"
 "— Então você escolheu o pior caminho possível.\n"
 "Ele apontou para o interior do continente.\n"
 "— Depois dessas montanhas não existe mais vila nenhuma.\n"
-"Kael franziu a testa.\n"
+f"{nome_heroi} franziu a testa.\n"
 "— Nenhuma?\n"
 "O velho balançou a cabeça.\n"
 "— Só ruínas.\n"
 "Ele falou a última parte mais baixo.\n"
 "— E coisas piores.\n"
-"Kael olhou para o horizonte.\n"
+f"{nome_heroi} olhou para o horizonte.\n"
 "O ar que vinha do interior carregava um cheiro estranho.\n"
 "Enxofre...\n",
 
 "...O demônio atacou primeiro.\n"
 "Sua espada gigantesca desceu como um meteoro.\n"
 "O impacto partiu a estrada de pedra.\n"
-"Kael já não estava mais ali.\n"
+f"{nome_heroi} já não estava mais ali.\n"
 "Ele avançou pela lateral da criatura tentando atingir o torso.\n"
 "Mas a pele do demônio era dura como ferro.\n"
 "A lâmina raspou sem penetrar profundamente.\n"
 "O demônio girou o braço com uma velocidade assustadora.\n"
-"Kael teve que recuar rapidamente para não ser esmagado.\n"
+f"{nome_heroi} teve que recuar rapidamente para não ser esmagado.\n"
 "A criatura era forte.\n"
 "Muito mais forte que qualquer monstro que ele havia enfrentado até agora.\n"
-"Mas Kael percebeu algo.\n"
+f"Mas {nome_heroi} percebeu algo.\n"
 "O demônio era poderoso.\n"
 "Mas lento.\n"
 "A espada gigantesca precisava de espaço para atacar.\n"
 "Cada golpe criava uma pequena abertura.\n"
-"Kael esperou.\n"
+f"{nome_heroi} esperou.\n"
 "O demônio levantou a arma novamente.\n"
 "— Morra!\n"
 "A espada desceu.\n"
-"Kael correu direto para a criatura.\n"
+f"{nome_heroi} correu direto para a criatura.\n"
 "A lâmina gigante passou atrás dele.\n"
 "Por um segundo o peito do demônio ficou completamente aberto.\n"
 "Era tudo que ele precisava.\n"
-"Kael saltou.\n"
+f"{nome_heroi} saltou.\n"
 "Girou o corpo no ar.\n"
 "E cravou a espada direto no coração do demônio.\n"
 "A lâmina atravessou carne ossos e magia.\n"
@@ -1629,12 +1669,12 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "O corpo inteiro explodiu em chamas negras.\n"
 "Restaram apenas cinzas espalhadas pela estrada.\n"
 "Silêncio voltou ao lugar.\n"
-"Kael puxou a espada.\n"
+f"{nome_heroi} puxou a espada.\n"
 "Ele olhou para o caminho que seguia pelas montanhas.\n"
 "Lá na frente.\n"
 "O céu estava vermelho.\n"
 "Tempestades de energia demoníaca giravam sobre o horizonte.\n"
-"Kael respirou fundo.\n"
+f"{nome_heroi} respirou fundo.\n"
 "— Então o portal está realmente aberto.\n"
 "Ele começou a caminhar novamente.\n"
 "Cada passo o levava mais perto do coração do inferno.\n"
@@ -1642,7 +1682,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 
 "...Capítulo 7 — O Guardião Corrompido\n"
 "O portão das ruínas se abriu com um som grave de pedra arrastando.\n"
-"Kael empurrou a estrutura antiga com esforço até criar espaço suficiente para passar.\n"
+f"{nome_heroi} empurrou a estrutura antiga com esforço até criar espaço suficiente para passar.\n"
 "Do outro lado não havia cidade.\n"
 "Nem estrada.\n"
 "Nem floresta.\n"
@@ -1651,7 +1691,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Pilares de pedra negra surgiam da terra como dentes quebrados.\n"
 "O céu acima estava pesado.\n"
 "Coberto por nuvens vermelhas que se moviam devagar demais para serem naturais.\n"
-"Kael caminhou alguns passos.\n"
+f"{nome_heroi} caminhou alguns passos.\n"
 "Cada movimento levantava poeira cinza no ar.\n"
 "Não havia vento.\n"
 "Não havia som.\n"
@@ -1671,12 +1711,12 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Coberta por rachaduras e símbolos demoníacos gravados no metal.\n"
 "Dentro dela não havia rosto.\n"
 "Apenas uma luz vermelha queimando onde os olhos deveriam estar.\n"
-"Quando Kael se aproximou, a figura se moveu.\n"
+f"Quando {nome_heroi} se aproximou, a figura se moveu.\n"
 "Lentamente.\n"
 "Como uma estátua voltando à vida.\n"
 "A voz ecoou dentro do metal.\n"
 "— Humano.\n"
-"Kael parou.\n"
+f"{nome_heroi} parou.\n"
 "— Faz tempo desde que alguém chegou tão longe.\n"
 "A criatura levantou a espada negra.\n"
 "— Eu sou o Guardião Corrompido.\n"
@@ -1684,7 +1724,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "— Lacaio de Malgethar.\n"
 "O vento começou a soprar pelo vale.\n"
 "— Aqueles que passam por mim chegam perto demais do Rei Demônio.\n"
-"Kael puxou sua espada.\n"
+f"{nome_heroi} puxou sua espada.\n"
 "— Então você está no caminho errado.\n"
 "A luz vermelha brilhou mais forte.\n"
 "— Não.\n"
@@ -1694,12 +1734,12 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "...O primeiro choque de espadas ecoou pelo vale como um trovão.\n"
 "A força do guardião era absurda.\n"
 "Cada golpe partia o chão de pedra ao meio.\n"
-"Kael desviava por pouco.\n"
+f"{nome_heroi} desviava por pouco.\n"
 "A armadura era grossa.\n"
 "Resistente.\n"
 "E movia-se como se tivesse vontade própria.\n"
 "O guardião atacou novamente.\n"
-"Kael bloqueou o golpe.\n"
+f"{nome_heroi} bloqueou o golpe.\n"
 "E foi empurrado vários metros para trás.\n"
 "A força abriu sulcos no chão.\n"
 "— Impressionante — disse o guardião.\n"
@@ -1707,19 +1747,19 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Ele avançou novamente.\n"
 "As espadas se chocaram várias vezes.\n"
 "Faíscas voaram pelo vale.\n"
-"Kael percebeu algo.\n"
+f"{nome_heroi} percebeu algo.\n"
 "A armadura era forte.\n"
 "Mas antiga.\n"
 "Rachaduras finas percorriam o metal.\n"
 "A corrupção demoníaca a mantinha viva.\n"
 "Mas também instável.\n"
-"Kael esperou o próximo ataque.\n"
+f"{nome_heroi} esperou o próximo ataque.\n"
 "O guardião ergueu a espada.\n"
-"Kael avançou direto.\n"
+f"{nome_heroi} avançou direto.\n"
 "Em vez de bloquear.\n"
 "Ele passou pelo golpe.\n"
 "A espada negra atingiu o chão atrás dele.\n"
-"Kael girou o corpo.\n"
+f"{nome_heroi} girou o corpo.\n"
 "E cravou sua lâmina na rachadura do peito da armadura.\n"
 "Por um segundo nada aconteceu.\n"
 "Então a luz vermelha começou a piscar.\n"
@@ -1730,23 +1770,23 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Fragmentos caíram no chão.\n"
 "O corpo vazio desmoronou lentamente.\n"
 "Silêncio voltou ao vale.\n"
-"Kael puxou a espada.\n"
+f"{nome_heroi} puxou a espada.\n"
 "Entre os restos havia um cristal negro.\n"
 "Energia demoníaca pulsava dentro dele.\n"
-"Kael pegou o cristal.\n"
+f"{nome_heroi} pegou o cristal.\n"
 "— Um núcleo.\n"
 "Ao longe montanhas negras se erguiam.\n"
 "E acima delas.\n"
 "Uma torre gigantesca perfurava as nuvens.\n"
 "A Fortaleza de Malgethar.\n"
-"Kael fechou a mão no cristal.\n"
+f"{nome_heroi} fechou a mão no cristal.\n"
 "— Então é para lá.\n"
 "O vento soprou mais forte.\n"
 "E um rugido distante ecoou das montanhas...\n"
 
 "...Capítulo 8 — O Cavaleiro do Abismo\n"
 "O vale de cinzas terminou nas montanhas negras.\n"
-"Kael caminhou por horas entre rochas escuras e trilhas estreitas.\n"
+f"{nome_heroi} caminhou por horas entre rochas escuras e trilhas estreitas.\n"
 "O vento ali era diferente.\n"
 "Frio e pesado.\n"
 "Carregando um cheiro metálico no ar.\n"
@@ -1761,7 +1801,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Estreito.\n"
 "Profundo.\n"
 "E no centro dele uma antiga ponte de pedra atravessava o abismo.\n"
-"Kael parou na entrada da ponte.\n"
+f"{nome_heroi} parou na entrada da ponte.\n"
 "O vento subia do fundo do desfiladeiro.\n"
 "Como um suspiro do próprio mundo.\n"
 "Ele começou a atravessar.\n"
@@ -1776,7 +1816,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Armadura negra.\n"
 "Capa longa rasgada pelo vento.\n"
 "Uma espada enorme apoiada no ombro.\n"
-"Quando Kael se aproximou.\n"
+f"Quando {nome_heroi} se aproximou.\n"
 "O cavalo bateu a pata no chão.\n"
 "Os olhos da criatura brilhavam com uma luz azul fria.\n"
 "O cavaleiro levantou lentamente a cabeça.\n"
@@ -1785,7 +1825,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "E duas chamas azuis.\n"
 "A voz ecoou como se viesse de um poço profundo.\n"
 "— Então você chegou até aqui.\n"
-"Kael parou alguns metros à frente.\n"
+f"{nome_heroi} parou alguns metros à frente.\n"
 "O vento levantava a capa do cavaleiro.\n"
 "— O Guardião Corrompido falhou.\n"
 "A criatura ergueu a espada.\n"
@@ -1793,16 +1833,16 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "O cavalo negro bufou.\n"
 "Liberando uma névoa escura pelas narinas.\n"
 "— Lacaio de Malgethar.\n"
-"Ele apontou a espada para Kael.\n"
+f"Ele apontou a espada para {nome_heroi}.\n"
 "— E o último muro entre você e o Rei Demônio.\n"
-"Kael puxou sua espada.\n"
+f"{nome_heroi} puxou sua espada.\n"
 "— Então vamos acabar com isso...\n",
 
 "...O cavalo avançou primeiro.\n"
 "Rápido demais para algo daquele tamanho.\n"
 "O cavaleiro levantou a espada.\n"
 "E atacou de cima para baixo.\n"
-"Kael desviou por pouco.\n"
+f"{nome_heroi} desviou por pouco.\n"
 "A lâmina negra atravessou a pedra da ponte.\n"
 "Como se fosse areia.\n"
 "O cavaleiro girou o cavalo com precisão perfeita.\n"
@@ -1813,7 +1853,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Esse inimigo sabia lutar.\n"
 "As espadas se chocaram várias vezes.\n"
 "Faíscas voaram sobre o abismo.\n"
-"Kael recuou alguns passos.\n"
+f"{nome_heroi} recuou alguns passos.\n"
 "Analisando.\n"
 "O cavaleiro não cometia erros.\n"
 "Mas havia algo estranho.\n"
@@ -1823,20 +1863,20 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Tudo parecia feito da mesma escuridão.\n"
 "Magia do abismo.\n"
 "O cavaleiro atacou outra vez.\n"
-"Kael bloqueou o golpe.\n"
+f"{nome_heroi} bloqueou o golpe.\n"
 "E naquele instante percebeu.\n"
 "A energia que mantinha o cavaleiro existindo.\n"
 "Não vinha da armadura.\n"
 "Vinha do peito.\n"
 "Um núcleo escuro brilhava entre as placas do peitoral.\n"
-"Kael esperou o próximo ataque.\n"
+f"{nome_heroi} esperou o próximo ataque.\n"
 "O cavalo avançou novamente.\n"
 "A espada desceu.\n"
-"Kael não bloqueou.\n"
+f"{nome_heroi} não bloqueou.\n"
 "Ele avançou.\n"
 "A lâmina inimiga passou por seu ombro.\n"
 "Rasgando sua roupa.\n"
-"Mas Kael já estava perto demais.\n"
+f"Mas {nome_heroi} já estava perto demais.\n"
 "Com um movimento rápido.\n"
 "Ele cravou sua espada direto no núcleo do peito do cavaleiro.\n"
 "Por um segundo tudo ficou imóvel.\n"
@@ -1848,12 +1888,12 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Como sombras levadas pelo vento.\n"
 "Em poucos segundos não restava nada.\n"
 "A ponte voltou a ficar silenciosa.\n"
-"Kael puxou a espada.\n"
+f"{nome_heroi} puxou a espada.\n"
 "Ele olhou para o outro lado do desfiladeiro.\n"
 "Agora não havia mais ninguém bloqueando o caminho.\n"
 "A estrada para a fortaleza estava aberta.\n"
 "A torre gigantesca de Malgethar parecia ainda maior.\n"
-"Kael respirou fundo.\n"
+f"{nome_heroi} respirou fundo.\n"
 "— Falta pouco agora...\n"
 
 "# Capítulo 9 — O Serafim Caído\n"
@@ -1869,12 +1909,12 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Mas não havia exército guardando a entrada.\n"
 "Era como se o próprio lugar dissesse.\n"
 "Se você chegou até aqui então entre.\n"
-"Kael caminhou lentamente em direção ao portão principal.\n"
+f"{nome_heroi} caminhou lentamente em direção ao portão principal.\n"
 "O ar estava pesado.\n"
 "Diferente de qualquer outro lugar que ele havia atravessado.\n"
 "Então a luz apareceu.\n"
 "Uma explosão de brilho branco surgiu no céu acima da fortaleza.\n"
-"Kael parou.\n"
+f"{nome_heroi} parou.\n"
 "Algo descia das nuvens.\n"
 "Asas enormes se abriram contra o céu escuro.\n"
 "Penas brancas.\n"
@@ -1888,7 +1928,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "— Humano.\n"
 "A voz era calma.\n"
 "Quase triste.\n"
-"Kael apertou o cabo da espada.\n"
+f"{nome_heroi} apertou o cabo da espada.\n"
 "— Outro lacaio de Malgethar?\n"
 "As asas da criatura se moveram lentamente.\n"
 "— Eu já fui muito mais do que isso.\n"
@@ -1897,7 +1937,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "— Eu sou o Serafim Caído.\n"
 "Antigo guardião do céu.\n"
 "Agora servo do Rei Demônio.\n"
-"Kael respirou fundo.\n"
+f"{nome_heroi} respirou fundo.\n"
 "— Então você escolheu o lado errado.\n"
 "A criatura fechou os olhos por um momento.\n"
 "— Talvez.\n"
@@ -1906,13 +1946,13 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "— Mas eu não posso deixar você passar...\n",
 
 "...O serafim desapareceu.\n"
-"Kael mal teve tempo de reagir.\n"
+f"{nome_heroi} mal teve tempo de reagir.\n"
 "Quando a espada de luz apareceu diante dele.\n"
-"O impacto lançou Kael vários metros para trás.\n"
+f"O impacto lançou {nome_heroi} vários metros para trás.\n"
 "A velocidade da criatura era absurda.\n"
 "O serafim atacava de todos os lados.\n"
 "Luz cortava o ar como relâmpagos.\n"
-"Kael bloqueava.\n"
+f"{nome_heroi} bloqueava.\n"
 "Desviava.\n"
 "Recuava.\n"
 "Tentando acompanhar os movimentos impossíveis.\n"
@@ -1921,11 +1961,11 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "— Nenhum humano chegou tão longe.\n"
 "As asas bateram.\n"
 "A criatura mergulhou novamente.\n"
-"Kael percebeu algo.\n"
+f"{nome_heroi} percebeu algo.\n"
 "Cada vez que o serafim atacava.\n"
 "As manchas negras nas asas cresciam.\n"
 "A corrupção estava consumindo ele lentamente.\n"
-"Kael apertou o cabo da espada.\n"
+f"{nome_heroi} apertou o cabo da espada.\n"
 "— Então você também está preso nisso.\n"
 "O serafim parou no ar.\n"
 "Por um momento hesitou.\n"
@@ -1933,10 +1973,10 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Ele levantou a espada de luz.\n"
 "— Termine isso.\n"
 "A criatura desceu em um último ataque.\n"
-"Kael avançou ao mesmo tempo.\n"
+f"{nome_heroi} avançou ao mesmo tempo.\n"
 "As duas lâminas se cruzaram no centro do campo.\n"
 "Por um segundo nada se moveu.\n"
-"Então Kael girou a espada.\n"
+f"Então {nome_heroi} girou a espada.\n"
 "E cravou a lâmina no peito do serafim.\n"
 "Ali onde a corrupção era mais forte.\n"
 "A luz explodiu ao redor deles.\n"
@@ -1948,14 +1988,14 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "E então a criatura se dissolveu em partículas de luz.\n"
 "Que subiram lentamente para o céu.\n"
 "Silêncio caiu sobre a fortaleza.\n"
-"Kael puxou a espada.\n"
+f"{nome_heroi} puxou a espada.\n"
 "No chão restava apenas um pequeno fragmento de cristal brilhante.\n"
 "Energia divina misturada com magia demoníaca.\n"
-"Kael pegou o cristal.\n"
+f"{nome_heroi} pegou o cristal.\n"
 "Ele olhou para a entrada da fortaleza.\n"
 "As enormes portas começaram a se abrir lentamente sozinhas.\n"
 "Como se algo lá dentro já soubesse.\n"
-"Kael respirou fundo.\n"
+f"{nome_heroi} respirou fundo.\n"
 "— Acabaram os lacaios.\n"
 "Ele caminhou em direção à entrada escura.\n"
 "— Agora só falta um.\n"
@@ -1963,14 +2003,14 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Uma voz profunda ecoou pelas paredes.\n"
 "— Finalmente.\n"
 "As sombras se moveram no interior do castelo.\n"
-"— Venha Kael.\n"
+f"— Venha {nome_heroi}.\n"
 "O nome dele ecoou pela sala do trono.\n"
 "— Estou esperando há dez anos.\n"
 "A porta se abriu completamente.\n"
 "E o trono do Rei Demônio aguardava no fundo da escuridão...\n"
 
 "...Capítulo Final — O Rei Demônio\n"
-"A porta da fortaleza se fechou atrás de Kael com um som pesado.\n"
+f"A porta da fortaleza se fechou atrás de {nome_heroi} com um som pesado.\n"
 "O salão do trono era gigantesco.\n"
 "Colunas negras subiam até desaparecer na escuridão do teto.\n"
 "Chamas vermelhas queimavam em tochas antigas.\n"
@@ -1983,7 +2023,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Estava Malgethar.\n"
 "Ele não se levantou.\n"
 "Não no começo.\n"
-"Kael caminhou lentamente pelo salão.\n"
+f"{nome_heroi} caminhou lentamente pelo salão.\n"
 "Cada passo ecoava como um desafio.\n"
 "Quando chegou perto o suficiente.\n"
 "Malgethar finalmente falou.\n"
@@ -1991,7 +2031,7 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "Calma.\n"
 "Pesada.\n"
 "— Dez anos.\n"
-"Kael parou.\n"
+f"{nome_heroi} parou.\n"
 "Os olhos vermelhos do Rei Demônio se abriram na escuridão da capa.\n"
 "— Dez anos desde que destruí sua vila.\n"
 "Malgethar levantou lentamente.\n"
@@ -2005,31 +2045,28 @@ hist = ['Capítulo 0 — O Dia em que o Céu Caiu\n'
 "— Você derrotou meus lacaios.\n"
 "— Atravessou oceanos.\n"
 "— Sobreviveu ao meu mundo.\n"
-"Malgethar parou diante de Kael.\n"
+f"Malgethar parou diante de {nome_heroi}.\n"
 "Os olhos vermelhos brilharam mais forte.\n"
 "— Então mostre.\n"
 "Ele ergueu a mão.\n"
 "Energia demoníaca explodiu pelo salão.\n"
 "— Mostre se você realmente tem o direito de me enfrentar.\n"
-"Kael puxou a espada.\n"
+f"{nome_heroi} puxou a espada.\n"
 "— Eu esperei dez anos por isso.\n"
 "Malgethar sorriu pela primeira vez.\n"
 "— Então venha.\n"
 "O Rei Demônio ergueu a mão.\n"
-"— Kael.\n"
+f"— {nome_heroi}.\n"
 "E a batalha começou...\n"
 ]
 
 def historia():
     global indice_capitulo_atual
-    caracter = len(hist[indice_capitulo_atual])
-    for i in range(caracter):
-        print(hist[indice_capitulo_atual][i:i+1] , end='', flush=True)
-        time.sleep(0.02)
+    print_with_skip(hist[indice_capitulo_atual])
        
 hist_2 =["A noite caiu sobre o assentamento.\n"
 "As tochas iluminavam as ruas enquanto os sobreviventes se preparavam.\n"
-"Kael caminhava entre as casas com a espada na mão.\n"
+f"{nome_heroi} caminhava entre as casas com a espada na mão.\n"
 "Algo estava errado.\n"
 "Os zumbis tinham parado.\n"
 "O silêncio tomou conta do lugar.\n"
@@ -2046,13 +2083,13 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "O lich levantou a mão lentamente.\n"
 "— Humano...\n"
 "— Este lugar agora pertence aos mortos.\n"
-"Kael ergueu a espada.\n"
+f"{nome_heroi} ergueu a espada.\n"
 "— Então você veio ao lugar errado.\n"
 "O lich riu.\n"
 "E levantou o cajado.\n"
 "A batalha começou...\n",
 
-"...Kael continuou avançando pela floresta.\n"
+f"...{nome_heroi} continuou avançando pela floresta.\n"
 "A floresta ficou cada vez mais escura.\n"
 "Mais silenciosa.\n"
 "Até que ele chegou a outra clareira.\n"
@@ -2063,7 +2100,7 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "Uma sombra enorme cobria metade da clareira.\n"
 "O ar estava quente.\n"
 "Pesado.\n"
-"Kael levantou os olhos lentamente.\n"
+f"{nome_heroi} levantou os olhos lentamente.\n"
 "E viu.\n"
 "Um dragão.\n"
 "As escamas negras refletiam a pouca luz da lua.\n"
@@ -2073,11 +2110,11 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "Amarelos.\n"
 "Antigos.\n"
 "Inteligentes.\n"
-"O dragão observou Kael por alguns segundos.\n"
+f"O dragão observou {nome_heroi} por alguns segundos.\n"
 "Então uma voz profunda ecoou pela clareira.\n"
 "— Um humano… chegou até aqui.\n"
 "A voz parecia vir de dentro da própria terra.\n"
-"Kael apertou o cabo da espada.\n"
+f"{nome_heroi} apertou o cabo da espada.\n"
 "— Você é o responsável pelas criaturas desta floresta?\n"
 "O dragão soltou um som baixo.\n"
 "Algo entre uma risada e um rosnado.\n"
@@ -2086,23 +2123,23 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "O vento da movimentação jogou poeira e folhas para todos os lados.\n"
 "— E você não deveria estar aqui...\n",
 
-"...Depois de quase uma hora descendo corredores Kael chegou a uma grande sala circular.\n"
+f"...Depois de quase uma hora descendo corredores {nome_heroi} chegou a uma grande sala circular.\n"
 "O teto era alto.\n"
 "Colunas naturais sustentavam a caverna.\n"
 "No centro havia algo estranho.\n"
 "Um baú antigo.\n"
-"Kael parou.\n"
+f"{nome_heroi} parou.\n"
 "A sala estava silenciosa demais.\n"
 "Mesmo assim caminhou até o baú.\n"
 "A tampa estava entreaberta.\n"
 "Dentro havia escuridão.\n"
-"Kael estendeu a mão.\n"
+f"{nome_heroi} estendeu a mão.\n"
 "E abriu completamente.\n"
 "O baú quase o mordeu.\n"
 "Dentes surgiram onde deveria existir madeira.\n"
 "A tampa virou uma mandíbula gigante.\n"
 "Uma língua comprida disparou tentando agarrá-lo.\n"
-"Kael saltou para trás.\n"
+f"{nome_heroi} saltou para trás.\n"
 "— Mímico.\n"
 "A criatura se levantou.\n"
 "O baú agora tinha pernas musculosas feitas de madeira viva.\n"
@@ -2113,7 +2150,7 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "A criatura avançou...\n",
 
 
-"...Kael continuou avançando pela mata por quase uma hora.\n"
+f"...{nome_heroi} continuou avançando pela mata por quase uma hora.\n"
 "Quanto mais ele entrava na floresta.\n"
 "Mais sinais de batalha apareciam.\n"
 "Árvores derrubadas.\n"
@@ -2130,7 +2167,7 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "Braços longos e musculosos.\n"
 "Dentes tortos aparecendo na boca enorme.\n"
 "Um troll.\n"
-"A criatura olhou diretamente para Kael...\n",
+f"A criatura olhou diretamente para {nome_heroi}...\n",
 
 "...O mar se abriu.\n"
 "Primeiro surgiu um tentáculo.\n"
@@ -2147,14 +2184,14 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "O monstro enrolou um tentáculo ao redor do barco.\n"
 "Como se fosse um brinquedo.\n"
 "A madeira começou a ranger.\n"
-"Kael ficou em pé no convés.\n"
+f"{nome_heroi} ficou em pé no convés.\n"
 "Encarando a criatura.\n"
 "— Então você é o rei daqui.\n"
 "O Kraken respondeu com um rugido.\n"
 "Que fez o mar inteiro tremer...\n",
 
 "Na manhã seguinte ele partiu.\n"
-"A pequena vila ficou para trás enquanto Kael caminhava em direção às montanhas negras.\n"
+f"A pequena vila ficou para trás enquanto {nome_heroi} caminhava em direção às montanhas negras.\n"
 "O caminho era seco e silencioso.\n"
 "Não havia animais.\n"
 "Não havia pássaros.\n"
@@ -2165,20 +2202,20 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "Olhos amarelos.\n"
 "Chifres curtos.\n"
 "Um demônio menor.\n"
-"A criatura inclinou a cabeça ao ver Kael.\n"
+f"A criatura inclinou a cabeça ao ver {nome_heroi}.\n"
 "Depois avançou com um grito agudo.\n"
-"Kael puxou a espada.\n"
+f"{nome_heroi} puxou a espada.\n"
 "O demônio atacou com garras afiadas.\n"
 "Mas seus movimentos eram desordenados.\n"
-"Kael desviou facilmente.\n"
+f"{nome_heroi} desviou facilmente.\n"
 "Com um único golpe preciso atravessou o peito da criatura.\n"
 "O demônio caiu no chão e se desfez lentamente em cinzas negras.\n"
-"Kael observou os restos desaparecerem.\n"
+f"{nome_heroi} observou os restos desaparecerem.\n"
 "— Então começou.\n"
 "Ele já tinha ouvido histórias.\n"
 "Se demônios menores estavam vagando pela estrada.\n"
 "Significava que algo muito pior estava próximo.\n"
-"Kael continuou caminhando pela estrada de pedra quebrada.\n"
+f"{nome_heroi} continuou caminhando pela estrada de pedra quebrada.\n"
 "Quanto mais avançava em direção às montanhas negras mais sinais apareciam.\n"
 "Cinzas espalhadas pelo chão.\n"
 "Árvores queimadas.\n"
@@ -2188,7 +2225,7 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "Um enorme portal de pedra quebrado no meio da estrada.\n"
 "Duas colunas gigantes estavam tombadas no chão.\n"
 "Como se algo colossal tivesse passado por ali.\n"
-"Mas não era aquilo que chamou a atenção de Kael.\n"
+f"Mas não era aquilo que chamou a atenção de {nome_heroi}.\n"
 "Era a criatura parada no meio do caminho.\n"
 "Alta.\n"
 "Muito alta.\n"
@@ -2199,12 +2236,12 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 "E uma espada enorme feita de metal negro.\n"
 "Um demônio guerreiro.\n"
 "A criatura estava parada como se estivesse esperando.\n"
-"Quando Kael se aproximou os olhos amarelos do demônio brilharam.\n"
+f"Quando {nome_heroi} se aproximou os olhos amarelos do demônio brilharam.\n"
 "Ele sorriu.\n"
 "— Um humano.\n"
 "A voz era grave pesada como pedra.\n"
 "— Faz séculos que não vejo um atravessar estas terras sozinho.\n"
-"Kael não respondeu.\n"
+f"{nome_heroi} não respondeu.\n"
 "Apenas puxou a espada.\n"
 "O demônio ergueu sua lâmina gigante.\n"
 "— Se quer passar.\n"
@@ -2214,10 +2251,7 @@ hist_2 =["A noite caiu sobre o assentamento.\n"
 
 def historia_apresentacao():
     global indice_capitulo_atual
-    caracter = len(hist_2[indice_capitulo_atual])
-    for i in range(caracter):
-        print(hist_2[indice_capitulo_atual][i:i+1] , end='', flush=True)
-        time.sleep(0.02)
+    print_with_skip(hist_2[indice_capitulo_atual])
 
 finais = [' ',
           
@@ -2239,44 +2273,44 @@ finais = [' ',
             "    J%____________________%L\n"
             "A batalha final destruiu metade da fortaleza.\n"
             "Mas no final.\n"
-            "A espada de Kael atravessou o coração de Malgethar.\n"
+            f"A espada de {nome_heroi} atravessou o coração de Malgethar.\n"
             "O Rei Demônio caiu de joelhos.\n"
             "A energia demoníaca começou a desaparecer.\n"
-            "Ele olhou para Kael uma última vez.\n"
+            f"Ele olhou para {nome_heroi} uma última vez.\n"
             "— Então finalmente chegou.\n"
             "O corpo dele começou a se desfazer em cinzas.\n"
             "— O mundo agora é seu para proteger.\n"
             "Malgethar desapareceu.\n"
             "O silêncio voltou ao castelo.\n"
-            "Kael saiu da fortaleza.\n"
+            f"{nome_heroi} saiu da fortaleza.\n"
             "Enquanto o sol finalmente atravessava as nuvens.\n"
             "Depois de dez anos.\n"
             "A guerra acabou.\n",
 
             "# FINAL 2 — Derrota\n"
-            "Kael caiu.\n"
+            f"{nome_heroi} caiu.\n"
             "Sua espada deslizou pelo chão de pedra.\n"
             "Malgethar olhou para ele de cima.\n"
             "— Você lutou bem.\n"
             "O Rei Demônio ergueu a mão.\n"
             "— Mas ainda não era suficiente.\n"
             "A escuridão cobriu o salão.\n"
-            "O corpo de Kael desapareceu nas sombras.\n"
+            f"O corpo de {nome_heroi} desapareceu nas sombras.\n"
             "E o mundo continuou sob o domínio de Malgethar.\n", 
 
             "FINAL 3 — Sacrifício\n"
-            "Kael levantou a espada.\n"
+            f"{nome_heroi} levantou a espada.\n"
             "Ele sabia o que precisava fazer.\n"
             "Se eu continuar vivo.\n"
             "Posso me tornar algo pior.\n"
             "Ele atravessou a própria espada no peito.\n"
             "O cristal caiu no chão.\n"
             "A corrupção desapareceu.\n"
-            "Kael salvou o mundo.\n"
+            f"{nome_heroi} salvou o mundo.\n"
             "Mesmo que ninguém jamais soubesse.\n",
 
             "FINAL 4 — Novo Rei Demônio\n"
-            "Kael deixou a corrupção consumir seu corpo.\n"
+            f"{nome_heroi} deixou a corrupção consumir seu corpo.\n"
             "O poder cresceu.\n"
             "As sombras o envolveram.\n"
             "Quando ele se levantou novamente.\n"
@@ -2312,7 +2346,7 @@ def fim():
         elif vida_jogador <= (vida_max_j / 10) and cristal == False:
             cristal = True
             print( "Durante a batalha final.\n"
-                    "Kael sentiu o cristal do Serafim Caído pulsando em seu bolso.\n"
+                    "{nome_heroi} sentiu o cristal do Serafim Caído pulsando em seu bolso.\n"
                     "Uma voz sussurrou em sua mente.\n"
                     "Use.\n"
                     "Use o poder.\n")
@@ -2321,7 +2355,7 @@ def fim():
                 try:
                     escolha_definitiva = str(input("Usar a pedra do Serafim caido S/N.")).upper()
                     if escolha_definitiva == 'S':
-                        print("Kael segurou o cristal.\n"
+                        print(f"{nome_heroi} segurou o cristal.\n"
                         "A energia divina misturada com corrupção demoníaca entrou em seu corpo.\n"
                         "Seu poder aumentou.\n"
                         "Mas algo dentro dele também começou a mudar.\n")
@@ -2331,7 +2365,7 @@ def fim():
                         print("O poder dentro dele chamava.\n"
                         "Prometia força.\n"
                         "Prometia vitória.\n"
-                        "Mas Kael não tocou nele.\n"
+                        f"Mas {nome_heroi} não tocou nele.\n"
                         "Ele fechou a mão e ignorou o sussurro.\n"
                         "— Eu não preciso disso.\n"
                         "Malgethar avançou com toda sua força.\n"
@@ -2339,7 +2373,7 @@ def fim():
                         "As espadas se chocaram novamente.\n"
                         "O impacto quebrou o chão de pedra.\n"
                         "A batalha continuou por minutos que pareceram horas.\n"
-                        "Kael lutava apenas com sua própria força.\n"
+                        f"{nome_heroi} lutava apenas com sua própria força.\n"
                         "Sua própria vontade.\n"
                         "Sua própria espada.\n") 
                         time.sleep(5)
@@ -2352,7 +2386,7 @@ def fim():
             "O  derrotou Malgethar.\n"
             "O Rei Demônio caiu.\n"
             "Mas o cristal continuava brilhando.\n"
-            "Kael caiu de joelhos.\n"
+            f"{nome_heroi} caiu de joelhos.\n"
             "A corrupção se espalhava por seu corpo.\n"
             "Ele tinha duas escolhas.\n")
             time.sleep(4)
@@ -2427,7 +2461,7 @@ def aleatoridade_i():
 
 def IA_inimigo():
     global escolha_jogador, vida_inimigo, vida_max_i, identificar_padrao, IA_padrao, IA_acao, jogador_leitura, IA_estilo, turno, probabilidade, identificar_padraoa
-
+    print
     identificar_padrao.append(escolha_jogador)
     IA_padrao.append(IA_acao)
     if len(IA_padrao) > 3:
@@ -2477,7 +2511,7 @@ def IA_inimigo():
         mana = 10 
 
     def IA_estados(ataque, defesa, esquiva,magia, cura, mana):
-        if IA_padrao[-2:] != [5, 5]: # se o inimigo curou
+        if IA_padrao[-2:] != [5, 5] and indice_capitulo_atual > 1: # se o inimigo curou
             if vida_inimigo <= vida_max_i * 0.2: # estado crítico
                 ataque = 40
                 magia = 30
@@ -2565,14 +2599,17 @@ def IA_inimigo():
             defesa = max(0, defesa - 15)
             mana = max(0, mana - 5)
             esquiva = max(0, esquiva - 5)
-        print(ataque, defesa, esquiva, magia, cura, mana)
         return ataque, defesa, esquiva, magia, cura, mana
 
 
     ataque, defesa, esquiva, magia, cura, mana = IA_estados(ataque, defesa, esquiva, magia, cura, mana)
 
-    soma = ataque + defesa + esquiva + magia + cura + mana
+    if indice_capitulo_atual > 1:
+       soma = ataque + defesa + esquiva + magia + cura + mana
+    else:
+       soma = ataque + defesa + esquiva
     pensamento = randint(1, soma)
+
     
     if pensamento:
         if pensamento <= ataque:
@@ -2622,7 +2659,7 @@ def nivel_j():
             print(f"Parabéns! Você subiu para o nível {jogador_nivel}.")
             print(f"XP necessário para o próximo nível: {xp_proximo_nivel}")
             if dificuldade == 1:
-                pontos_abilidades += 6
+                pontos_abilidades += 5
             elif dificuldade == 2:
                 pontos_abilidades += 4
             elif dificuldade == 3:
@@ -3683,11 +3720,8 @@ while True:
         break
     if vida_jogador <= (vida_max_j / 10) and cristal == False:
         fim()
-
     time.sleep(0.6)
     
-
-
 if cristal == True:
     f =f"Parabéns!\n"
 else:
@@ -3706,8 +3740,8 @@ end = ("==============================\n"
     f" ablidade adiquirida: {abilidade_100}\n"
     "______________________________\n"
     "==============================\n"
-    "          RPG BATTLE\n"
-    "          V 0.9 beta\n"
+    "         Shattared Sky\n"
+    "          V 0.97 beta\n"
     "==============================\n"
     "       Desenvolvido por:\n"
     "           Kennedy\n"
